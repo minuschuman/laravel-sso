@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Teamwork;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Mail;
@@ -16,6 +17,23 @@ class TeamMemberController extends Controller
     }
 
     /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        echo "My team has " . \Auth::user()->currentTeam->users->count() . " users.";
+        dd();
+        // $teamModel = config('teamwork.team_model');
+        // $team = $teamModel::all();
+
+        // $users = $users->paginate(5);
+        // return view('teams.member.index', compact('users'))
+        //     ->with('i', (request()->input('page', 1) - 1) * 5);
+    }
+
+    /**
      * Show the members of the given team.
      *
      * @param  int $id
@@ -25,8 +43,19 @@ class TeamMemberController extends Controller
     {
         $teamModel = config('teamwork.team_model');
         $team = $teamModel::findOrFail($id);
+        if (request()->has('search')) {
+            $searchTerm = request()->input('search');;
+            $users = User::whereHas('teams', function ($query) use ($team) {
+                $query->where('team_id', $team->id);
+            })->where('name', 'like', "%{$searchTerm}%"); //->get();
+        } else {
+            $users = $team->users()->with('roles'); //->get();
+        }
+        $users = $users->paginate(5);
+        return view('teamwork.members.list', compact('users', 'team'))
+            ->with('i', (request()->input('page', 1) - 1) * 5);;
 
-        return view('teamwork.members.list')->withTeam($team);
+        // return view('teamwork.members.list')->withTeam($team);
     }
 
     /**
@@ -41,7 +70,7 @@ class TeamMemberController extends Controller
     {
         $teamModel = config('teamwork.team_model');
         $team = $teamModel::findOrFail($team_id);
-        if (! auth()->user()->isOwnerOfTeam($team)) {
+        if (!auth()->user()->isOwnerOfTeam($team)) {
             abort(403);
         }
 
@@ -70,10 +99,10 @@ class TeamMemberController extends Controller
         $teamModel = config('teamwork.team_model');
         $team = $teamModel::findOrFail($team_id);
 
-        if (! Teamwork::hasPendingInvite($request->email, $team)) {
+        if (!Teamwork::hasPendingInvite($request->email, $team)) {
             Teamwork::inviteToTeam($request->email, $team, function ($invite) {
                 Mail::send('teamwork.emails.invite', ['team' => $invite->team, 'invite' => $invite], function ($m) use ($invite) {
-                    $m->to($invite->email)->subject('Invitation to join team '.$invite->team->name);
+                    $m->to($invite->email)->subject('Invitation to join team ' . $invite->team->name);
                 });
                 // Send email to user
             });
@@ -96,7 +125,7 @@ class TeamMemberController extends Controller
     {
         $invite = TeamInvite::findOrFail($invite_id);
         Mail::send('teamwork.emails.invite', ['team' => $invite->team, 'invite' => $invite], function ($m) use ($invite) {
-            $m->to($invite->email)->subject('Invitation to join team '.$invite->team->name);
+            $m->to($invite->email)->subject('Invitation to join team ' . $invite->team->name);
         });
 
         return redirect(route('teams.members.show', $invite->team));
