@@ -4,6 +4,10 @@ use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\Teamwork\TeamController;
+use App\Http\Controllers\Teamwork\TeamMemberController;
+use App\Http\Controllers\Teamwork\AuthController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -32,13 +36,13 @@ Route::middleware('auth')->group(function () {
 require __DIR__ . '/auth.php';
 
 
-Route::prefix('admin')->namespace('App\\Http\\Controllers\\Admin')->middleware(['auth'])->group(function () {
+Route::prefix('admin')->namespace('App\Http\Controllers\Admin')->middleware(['auth'])->group(function () {
     Route::resource('permission', PermissionController::class);
     Route::resource('role', RoleController::class);
     Route::resource('user', UserController::class);
 });
 
-Route::get('/owner', function(){
+Route::get('/owner', function () {
     return "Owner of current team.";
 })->middleware('auth', 'teamowner');
 
@@ -46,20 +50,21 @@ Route::get('/owner', function(){
 /**
  * Teamwork routes
  */
-Route::group(['prefix' => 'teams', 'namespace' => 'Teamwork'], function()
-{
-    Route::get('/', [App\Http\Controllers\Teamwork\TeamController::class, 'index'])->name('teams.index');
-    Route::get('create', [App\Http\Controllers\Teamwork\TeamController::class, 'create'])->name('teams.create');
-    Route::post('teams', [App\Http\Controllers\Teamwork\TeamController::class, 'store'])->name('teams.store');
-    Route::get('edit/{id}', [App\Http\Controllers\Teamwork\TeamController::class, 'edit'])->name('teams.edit');
-    Route::put('edit/{id}', [App\Http\Controllers\Teamwork\TeamController::class, 'update'])->name('teams.update');
-    Route::delete('destroy/{id}', [App\Http\Controllers\Teamwork\TeamController::class, 'destroy'])->name('teams.destroy');
-    Route::get('switch/{id}', [App\Http\Controllers\Teamwork\TeamController::class, 'switchTeam'])->name('teams.switch');
+Route::group(['prefix' => 'teams', 'namespace' => 'Teamwork'], function () {
+    Route::get('/', [TeamController::class, 'index'])->name('teams.index');
 
-    Route::get('members/{id}', [App\Http\Controllers\Teamwork\TeamMemberController::class, 'show'])->name('teams.members.show');
-    Route::get('members/resend/{invite_id}', [App\Http\Controllers\Teamwork\TeamMemberController::class, 'resendInvite'])->name('teams.members.resend_invite');
-    Route::post('members/{id}', [App\Http\Controllers\Teamwork\TeamMemberController::class, 'invite'])->name('teams.members.invite');
-    Route::delete('members/{id}/{user_id}', [App\Http\Controllers\Teamwork\TeamMemberController::class, 'destroy'])->name('teams.members.destroy');
+    Route::middleware('role:super-admin')->get('create', [TeamController::class, 'create'])->name('teams.create');
+    // Route::get('create', [TeamController::class, 'create'])->name('teams.create');
+    Route::post('teams', [TeamController::class, 'store'])->name('teams.store');
+    Route::get('edit/{id}', [TeamController::class, 'edit'])->name('teams.edit');
+    Route::put('edit/{id}', [TeamController::class, 'update'])->name('teams.update');
+    Route::delete('destroy/{id}', [TeamController::class, 'destroy'])->name('teams.destroy');
+    Route::get('switch/{id}', [TeamController::class, 'switchTeam'])->name('teams.switch');
 
-    Route::get('accept/{token}', [App\Http\Controllers\Teamwork\AuthController::class, 'acceptInvite'])->name('teams.accept_invite');
+    Route::get('members/{id}', [TeamMemberController::class, 'show'])->name('teams.members.show');
+    Route::get('members/resend/{invite_id}', [TeamMemberController::class, 'resendInvite'])->name('teams.members.resend_invite');
+    Route::post('members/{id}', [TeamMemberController::class, 'invite'])->name('teams.members.invite');
+    Route::delete('members/{id}/{user_id}', [TeamMemberController::class, 'destroy'])->name('teams.members.destroy');
+
+    Route::get('accept/{token}', [AuthController::class, 'acceptInvite'])->name('teams.accept_invite');
 });
