@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Teamwork;
 
+use App\Models\Team;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Mpociot\Teamwork\Exceptions\UserNotInTeamException;
@@ -20,8 +21,15 @@ class TeamController extends Controller
      */
     public function index()
     {
-        return view('teamwork.index')
-            ->with('teams', auth()->user()->teams);
+        $teams = (new Team())->newQuery();
+        if (request()->has('search')) {
+            $teams->where('name', 'Like', '%' . request()->input('search') . '%');
+        } else {
+            $teams->oldest();
+        }
+        $teams = $teams->paginate(5);
+        return view('teamwork.index', compact('teams', auth()->user()->teams))
+            ->with('i', (request()->input('page', 1) - 1) * 5);
     }
 
     /**
@@ -87,7 +95,7 @@ class TeamController extends Controller
         $teamModel = config('teamwork.team_model');
         $team = $teamModel::findOrFail($id);
 
-        if (! auth()->user()->isOwnerOfTeam($team)) {
+        if (!auth()->user()->isOwnerOfTeam($team)) {
             abort(403);
         }
 
@@ -127,7 +135,7 @@ class TeamController extends Controller
         $teamModel = config('teamwork.team_model');
 
         $team = $teamModel::findOrFail($id);
-        if (! auth()->user()->isOwnerOfTeam($team)) {
+        if (!auth()->user()->isOwnerOfTeam($team)) {
             abort(403);
         }
 
@@ -135,7 +143,7 @@ class TeamController extends Controller
 
         $userModel = config('teamwork.user_model');
         $userModel::where('current_team_id', $id)
-                    ->update(['current_team_id' => null]);
+            ->update(['current_team_id' => null]);
 
         return redirect(route('teams.index'));
     }

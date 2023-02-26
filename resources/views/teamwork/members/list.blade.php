@@ -1,99 +1,162 @@
-@extends('layouts.app')
-
-@section('content')
-    <div class="container">
-        <div class="row">
-            <div class="col-md-8 col-md-offset-2">
-                <div class="panel panel-default">
-                    <div class="panel-heading clearfix">
-                        Members of team "{{$team->name}}"
-                        <a href="{{route('teams.index')}}" class="btn btn-sm btn-default pull-right">
-                            <i class="fa fa-arrow-left"></i> Back
-                        </a>
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Teams') }}
+        </h2>
+    </x-slot>
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 bg-white border-b border-gray-200">
+                    <div class="px-6 flex justify-between items-center">
+                        <h2
+                            class="inline-block text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight dark:text-slate-200 py-4 block sm:inline-block flex">
+                            Members of team <span class="tracking-wide">{{ $team->name }}</span></h2>
+                        <a href="{{ route('teams.index') }}"
+                            class="px-4 py-2 text-white mr-4 bg-blue-600">{{ __('Back to Teams') }}</a>
+                        @if ($errors->any())
+                            <ul class="mt-3 list-none list-inside text-sm text-red-400">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
                     </div>
-                    <div class="panel-body">
-                        <table class="table table-striped">
-                            <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Action</th>
-                            </tr>
-                            </thead>
-                            @foreach($team->users AS $user)
-                                <tr>
-                                    <td>{{$user->name}}</td>
-                                    <td>
-                                        @if(auth()->user()->isOwnerOfTeam($team))
-                                            @if(auth()->user()->getKey() !== $user->getKey())
-                                                <form style="display: inline-block;" action="{{route('teams.members.destroy', [$team, $user])}}" method="post">
-                                                    {!! csrf_field() !!}
-                                                    <input type="hidden" name="_method" value="DELETE" />
-                                                    <button class="btn btn-danger btn-sm"><i class="fa fa-trash-o"></i> Delete</button>
-                                                </form>
-                                            @endif
-                                        @endif
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </table>
-                    </div>
-                </div>
-                <div class="panel panel-default">
-                    <div class="panel-heading clearfix">Pending invitations</div>
-                    <div class="panel-body">
-                        <table class="table table-striped">
-                            <thead>
-                            <tr>
-                                <th>E-Mail</th>
-                                <th>Action</th>
-                            </tr>
-                            </thead>
-                            @foreach($team->invites AS $invite)
-                                <tr>
-                                    <td>{{$invite->email}}</td>
-                                    <td>
-                                        <a href="{{route('teams.members.resend_invite', $invite)}}" class="btn btn-sm btn-default">
-                                            <i class="fa fa-envelope-o"></i> Resend invite
-                                        </a>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </table>
-                    </div>
-                </div>
-
-
-                <div class="panel panel-default">
-                    <div class="panel-heading clearfix">Invite to team "{{$team->name}}"</div>
-                    <div class="panel-body">
-                        <form class="form-horizontal" method="post" action="{{route('teams.members.invite', $team)}}">
-                            {!! csrf_field() !!}
-                            <div class="form-group{{ $errors->has('email') ? ' has-error' : '' }}">
-                                <label class="col-md-4 control-label">E-Mail Address</label>
-
-                                <div class="col-md-6">
-                                    <input type="email" class="form-control" name="email" value="{{ old('email') }}">
-
-                                    @if ($errors->has('email'))
-                                        <span class="help-block">
-                                                <strong>{{ $errors->first('email') }}</strong>
-                                            </span>
-                                    @endif
+                    <div class="flex flex-col mt-8">
+                        <div class="py-2">
+                            @if (session()->has('message'))
+                                <div class="mb-8 text-green-400 font-bold">
+                                    {{ session()->get('message') }}
                                 </div>
-                            </div>
+                            @endif
+                            <div class="min-w-full border-b border-gray-200 shadow">
+                                <form method="GET" action="{{ route('teams.members.show', ['id' => $team->id]) }}">
+                                    <div class="pb-2 pt-4 flex">
+                                        <div class="overflow-hidden flex pl-4">
+                                            <input type="search" name="search"
+                                                value="{{ request()->input('search') }}"
+                                                class="rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                                placeholder="Search">
+                                            <button type='submit'
+                                                class='ml-4 inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 disabled:opacity-25 transition ease-in-out duration-150'>
+                                                {{ __('Search') }}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                                <table class="border-collapse table-auto w-full text-sm">
+                                    <thead>
+                                        <tr
+                                            class="text-xs font-semibold tracking-wide text-left text-gray-500 uppercase bg-gray-50 border-b">
+                                            <th
+                                                class="py-4 px-6 bg-grey-lightest font-bold uppercase text-sm text-grey-dark border-b border-grey-light text-left">
+                                                Name</th>
+                                            <th
+                                                class="py-4 px-6 bg-grey-lightest font-bold uppercase text-sm text-grey-dark border-b border-grey-light text-left">
+                                                Role</th>
+                                            <th
+                                                class="py-4 px-6 bg-grey-lightest font-bold uppercase text-sm text-grey-dark border-b border-grey-light text-left">
+                                                Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y">
+                                        @foreach ($users as $user)
+                                            <tr class="text-gray-700">
+                                                <td
+                                                    class="border-b border-slate-100 dark:border-slate-700 p-4 pl-8 text-slate-500 dark:text-slate-400">
+                                                    {{ $user->name }}
+                                                </td>
+                                                <td
+                                                    class="border-b border-slate-100 dark:border-slate-700 p-4 pl-8 text-slate-500 dark:text-slate-400">
+                                                    {{-- {{ App\Models\User::findOrFail($user->id)->roles->first()->name ?? ' ' }} --}}
+                                                    {{ $user->roles->first()->name ?? 'Guest' }}
+                                                </td>
+                                                <td
+                                                    class="border-b border-slate-100 dark:border-slate-700 p-4 pl-8 text-slate-500 dark:text-slate-400">
+                                                    @if (auth()->user()->isOwnerOfTeam($team))
+                                                        @if (auth()->user()->getKey() !== $user->getKey())
+                                                            <form class="inline-block"
+                                                                action="{{ route('teams.members.destroy', [$team, $user]) }}"
+                                                                method="post">
+                                                                @csrf
+                                                                @method('DELETE')
 
-
-                            <div class="form-group">
-                                <div class="col-md-6 col-md-offset-4">
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fa fa-btn fa-envelope-o"></i>Invite to Team
-                                    </button>
-                                </div>
+                                                                <x-button>
+                                                                    Remove
+                                                                </x-button>
+                                                            </form>
+                                                        @endif
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
                             </div>
-                        </form>
+                            <div class="py-8">
+                                {{ $users->links() }}
+                            </div>
+                        </div>
                     </div>
                 </div>
+                {{-- <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="w-full px-6 py-4 bg-white overflow-hidden">
+                @if (auth()->user()->isOwnerOfTeam($team))
+
+                    <h3 class="mb-3 text-lg font-semibold tracking-wide">Pending invitations</h3>
+
+                    <div class="overflow-hidden mb-8 w-full rounded-lg border shadow-xs">
+                        <div class="overflow-x-auto w-full">
+                            <table class="w-full whitespace-no-wrap">
+                                <thead>
+                                    <tr
+                                        class="text-xs font-semibold tracking-wide text-left text-gray-500 uppercase bg-gray-50 border-b">
+                                        <th class="py-4 px-6 bg-grey-lightest font-bold uppercase text-sm text-grey-dark border-b border-grey-light text-left">E-Mail</th>
+                                        <th class="py-4 px-6 bg-grey-lightest font-bold uppercase text-sm text-grey-dark border-b border-grey-light text-left">Action</th>
+                                    </tr>
+                                </thead>
+                                @foreach ($team->invites as $invite)
+                                    <tr class="text-gray-700">
+                                        <td class="border-b border-slate-100 dark:border-slate-700 p-4 pl-8 text-slate-500 dark:text-slate-400">{{ $invite->email }}</td>
+                                        <td class="border-b border-slate-100 dark:border-slate-700 p-4 pl-8 text-slate-500 dark:text-slate-400">
+                                            <a href="{{ route('teams.members.resend_invite', $invite) }}"
+                                                class="inline-flex px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg border border-transparent active:bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring">
+                                                Resend invite
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </table>
+                        </div>
+                    </div>
+
+                    <h3 class="mb-3 text-lg font-semibold tracking-wide">Invite to team "{{ $team->name }}"
+                    </h3>
+
+                    <form class="form-horizontal" method="post" action="{{ route('teams.members.invite', $team) }}">
+                        @csrf
+
+                        <div>
+                            <x-label for="email" :value="__('Email')" />
+                            <x-input type="text" id="email" name="email" class="block w-full"
+                                value="{{ old('email') }}" required />
+                            @error('email')
+                                <span class="text-xs text-red-600 dark:text-red-400">
+                                    {{ $message }}
+                                </span>
+                            @enderror
+                        </div>
+
+                        <div class="mt-4">
+                            <x-button class="block">
+                                Invite to Team
+                            </x-button>
+                        </div>
+                    </form>
+
+                @endif
             </div>
         </div>
-    </div>
-@endsection
+    </div> --}}
+</x-app-layout>
