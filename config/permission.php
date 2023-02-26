@@ -94,7 +94,6 @@ return [
          */
 
         'team_foreign_key' => 'team_id',
-        // 'team_foreign_key' => 'custom_team_id',
     ],
 
     /*
@@ -112,8 +111,7 @@ return [
      * 'model_has_permissions'(view the latest version of package's migration file)
      */
 
-    // 'teams' => false,
-    'teams' => true,
+    'teams' => false,
 
     /*
      * When set to true, the required permission names are added to the exception
