@@ -61,10 +61,12 @@ Route::group(['prefix' => 'teams', 'namespace' => 'Teamwork'], function () {
     Route::delete('destroy/{id}', [TeamController::class, 'destroy'])->name('teams.destroy');
     Route::get('switch/{id}', [TeamController::class, 'switchTeam'])->name('teams.switch');
 
-    Route::get('members/{id}', [TeamMemberController::class, 'show'])->name('teams.members.show');
     Route::get('members/resend/{invite_id}', [TeamMemberController::class, 'resendInvite'])->name('teams.members.resend_invite');
     Route::post('members/{id}', [TeamMemberController::class, 'invite'])->name('teams.members.invite');
-    Route::delete('members/{id}/{user_id}', [TeamMemberController::class, 'destroy'])->name('teams.members.destroy');
-
     Route::get('accept/{token}', [AuthController::class, 'acceptInvite'])->name('teams.accept_invite');
+
+    Route::get('{team}/members', [TeamMemberController::class, 'index'])->name('teams.members.index');
+    Route::get('{team}/members/add', [TeamMemberController::class, 'create'])->name('teams.user.add');
+    Route::post('{team}/members/store', [TeamMemberController::class, 'store'])->name('teams.members.store');
+    Route::delete('{team}/members/{user_id}', [TeamMemberController::class, 'destroy'])->name('teams.members.destroy');
 });
