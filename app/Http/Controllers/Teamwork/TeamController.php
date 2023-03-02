@@ -28,7 +28,8 @@ class TeamController extends Controller
             $teams->oldest();
         }
         $teams = $teams->paginate(5);
-        return view('teamwork.index', compact('teams', auth()->user()->teams))
+            $userTeams = auth()->user()->teams->pluck('name')->toArray();
+            return view('teamwork.index', compact('teams', 'userTeams'))
             ->with('i', (request()->input('page', 1) - 1) * 5);
     }
 
@@ -54,13 +55,13 @@ class TeamController extends Controller
             'name' => 'required|string',
         ]);
 
-        $teamModel = config('teamwork.team_model');
+        // $teamModel = config('teamwork.team_model');
 
-        $team = $teamModel::create([
+        $team = Team::create([
             'name' => $request->name,
             'owner_id' => $request->user()->getKey(),
         ]);
-        $request->user()->attachTeam($team);
+        $request->user()->attachTeam($team, ['role' => 'owner', 'status' => 'active']);
 
         return redirect(route('teams.index'));
     }
