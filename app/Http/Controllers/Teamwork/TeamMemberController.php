@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Teamwork;
 
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -17,45 +18,24 @@ class TeamMemberController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {
-        echo "My team has " . \Auth::user()->currentTeam->users->count() . " users.";
-        dd();
-        // $teamModel = config('teamwork.team_model');
-        // $team = $teamModel::all();
-
-        // $users = $users->paginate(5);
-        // return view('teams.member.index', compact('users'))
-        //     ->with('i', (request()->input('page', 1) - 1) * 5);
-    }
-
-    /**
      * Show the members of the given team.
      *
      * @param  int $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function index($id)
     {
-        $teamModel = config('teamwork.team_model');
-        $team = $teamModel::findOrFail($id);
+        $team = Team::findOrFail($id);
         if (request()->has('search')) {
-            $searchTerm = request()->input('search');;
-            $users = User::whereHas('teams', function ($query) use ($team) {
-                $query->where('team_id', $team->id);
-            })->where('name', 'like', "%{$searchTerm}%"); //->get();
+            $searchTerm = request()->input('search');
+            $users = $team->getUsersWithRolesQuery()->where('name', 'like', "%{$searchTerm}%");;
         } else {
-            $users = $team->users()->with('roles'); //->get();
+            $users = $team->getUsersWithRolesQuery();
         }
         $users = $users->paginate(5);
-        return view('teamwork.members.list', compact('users', 'team'))
-            ->with('i', (request()->input('page', 1) - 1) * 5);;
 
-        // return view('teamwork.members.list')->withTeam($team);
+        return view('teamwork.members.index', compact('users', 'team'))
+            ->with('i', (request()->input('page', 1) - 1) * 5);;
     }
 
     /**
@@ -129,5 +109,35 @@ class TeamMemberController extends Controller
         });
 
         return redirect(route('teams.members.show', $invite->team));
+    }
+
+    public function create(Team $team)
+    {
+        $paginateSize = 5;
+        settype($paginateSize, 'integer');
+        $teamId = $team->id;
+        $users = User::leftJoin('team_user', function ($join) use ($teamId) {
+            $join->on('users.id', '=', 'team_user.user_id')
+                ->where('team_user.team_id', '=', $teamId);
+        })->paginate($paginateSize);
+        return view('teamwork.members.create', compact('users', 'team'))
+            ->with('i', (request()->input('page', 1) - 1) * $paginateSize);
+    }
+
+    public function store(Request $request, Team $team)
+    {
+        $userIds = json_decode($request->input('user_ids'));
+        $users = User::whereIn('id', $userIds)->get();
+        foreach ($users as $user) {
+            // $user->attachTeam($team, ['role' => 'member', 'status' => 'active']);
+            $user->teams()->syncWithoutDetaching([$team->id => ['role' => 'member', 'status' => 'active']]);
+        }
+
+        $memberIds = json_decode($request->input('member_ids'));
+        $members = User::whereIn('id', $memberIds)->get();
+        foreach ($members as $member) {
+            $member->teams()->syncWithoutDetaching([$team->id => ['role' => 'admin', 'status' => 'active']]);
+        }
+        return redirect()->route('teams.members.index', $team);
     }
 }
