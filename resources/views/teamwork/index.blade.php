@@ -88,7 +88,7 @@
                                                     @endif
                                                 </td>
                                                 <td class="px-4 py-3 text-sm">
-                                                    <a href="{{ route('teams.members.show', $team) }}"
+                                                    <a href="{{ route('teams.members.index', $team->id) }}"
                                                         class="inline-flex px-2 py-1 text-sm font-medium text-white bg-purple-600 rounded-lg border border-transparent active:bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring">
                                                         Members
                                                     </a>
@@ -125,4 +125,4 @@
             </div>
         </div>
     </div>
-</x-app-layout>>
+</x-app-layout>

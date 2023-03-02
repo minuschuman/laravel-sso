@@ -15,15 +15,20 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
-                    @role("User|admin")
-                        <x-nav-link :href="route('permission.index')" :active="request()->routeIs('permission.index')">
-                            {{ __('Permission') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('role.index')" :active="request()->routeIs('role.index')">{{ __('Roles') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('user.index')" :active="request()->routeIs('user.index')">{{ __('Users') }}
-                        </x-nav-link>
-                    @endrole
+                    {{-- @role('User|admin') --}}
+                    <x-nav-link :href="route('permission.index')" :active="request()->routeIs('permission.index')">
+                        {{ __('Permission') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('role.index')" :active="request()->routeIs('role.index')">
+                        {{ __('Roles') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('user.index')" :active="request()->routeIs('user.index')">
+                        {{ __('Users') }}
+                    </x-nav-link>
+                    {{-- @endrole --}}
+                    <x-nav-link :href="route('teams.index')" :active="request()->routeIs('teams.index')">
+                        {{ __('Teams') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -101,6 +106,9 @@
             <x-responsive-nav-link :href="route('user.index')" :active="request()->routeIs('user.index')">
                 {{ __('Users') }}
             </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('teams.index')" :active="request()->routeIs('teams.index')">
+                {{ __('Teams') }}
+            </x-responsive-nav-link>
         </div>
 
         <!-- Responsive Settings Options -->
@@ -112,7 +120,7 @@
 
             <div class="mt-3 space-y-1">
                 <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
+                    {{ __('My Account') }}
                 </x-responsive-nav-link>
 
                 <!-- Authentication -->
